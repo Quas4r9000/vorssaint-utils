@@ -68,13 +68,14 @@ final class SuperKeyService: ObservableObject {
     /// modifiers would ride every keystroke from then on, with no way back but
     /// pressing the key again, and typing would be dead in the meantime.
     private var heldKeyWatchdog: DispatchWorkItem?
-    /// How long the press may go without a repeat before it is let go. A key
-    /// really held repeats, so this is pushed out again and again and never
-    /// runs; it only decides how long a press whose release was lost can hold
-    /// the modifiers down. Taken from the keyboard's own first-repeat delay, so
-    /// a slow setting is never fought, and bounded at both ends: never so short
-    /// that a hold is cut off, never so long that the keyboard stays unusable
-    /// when repeat is switched off and no repeat is ever coming.
+    /// How long a press may go without a repeat before the keyboard is asked
+    /// whether the key is still down. A key that repeats re-arms the watchdog
+    /// and so never gets here; the lock key behind the super key never repeats,
+    /// so a held press reaches this deadline over and over and keeps going as
+    /// long as the key is still physically down. A press whose release never
+    /// arrived fails that check and is let go. Taken from the keyboard's own
+    /// first-repeat delay, and bounded at both ends so a slow setting is never
+    /// fought while a stuck press is still recovered.
     private var heldKeyTimeout: TimeInterval {
         let firstRepeat = NSEvent.keyRepeatDelay
         guard firstRepeat.isFinite, firstRepeat > 0 else { return 3 }
@@ -499,9 +500,29 @@ final class SuperKeyService: ObservableObject {
 
     private func armHeldKeyWatchdog() {
         heldKeyWatchdog?.cancel()
-        let work = DispatchWorkItem { [weak self] in self?.forgetHeldKey() }
+        let work = DispatchWorkItem { [weak self] in self?.heldKeyWatchdogFired() }
         heldKeyWatchdog = work
         DispatchQueue.main.asyncAfter(deadline: .now() + heldKeyTimeout, execute: work)
+    }
+
+    /// The deadline is the earliest a lost release is worth suspecting, not
+    /// proof of one: a lock key never repeats, so a hold that outlives it still
+    /// has the key down. Ask the keyboard instead of letting go, and come back
+    /// around while it stays down.
+    private func heldKeyWatchdogFired() {
+        heldKeyWatchdog = nil
+        guard !Self.triggerKeyIsPhysicallyDown() else {
+            armHeldKeyWatchdog()
+            return
+        }
+        forgetHeldKey()
+    }
+
+    /// The HID system tracks the physical key before this tap can swallow it,
+    /// so the trigger key still reads as down while it is genuinely held.
+    private static func triggerKeyIsPhysicallyDown() -> Bool {
+        CGEventSource.keyState(.hidSystemState,
+                               key: CGKeyCode(SuperKeySupport.triggerKeyCode))
     }
 
     private func cancelHeldKeyWatchdog() {
