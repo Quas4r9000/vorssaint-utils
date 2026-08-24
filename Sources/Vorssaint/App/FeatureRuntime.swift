@@ -142,6 +142,7 @@ final class FeatureRuntime: ObservableObject {
         .middleClick: { MiddleClickService.shared.syncWithPreferences() },
         .keyboardDebounce: { KeyboardDebounceService.shared.syncWithPreferences() },
         .superKey: { SuperKeyService.shared.syncWithPreferences() },
+        .rightOptionDelete: { RightOptionDeleteService.shared.syncWithPreferences() },
         .textSnippets: {
             TextSnippetService.shared.syncWithPreferences()
             SnippetLibraryService.shared.syncWithPreferences()

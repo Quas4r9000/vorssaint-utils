@@ -47,6 +47,7 @@ enum DefaultsKey {
     static let superKeyEnabled = "superKeyEnabled"        // Caps Lock holds the chosen modifiers (issue #330)
     static let superKeyModifiers = "superKeyModifiers"     // GlobalShortcutModifiers storage tokens
     static let superKeySoloAction = "superKeySoloAction"  // SuperKeySoloAction raw value
+    static let rightOptionDeleteEnabled = "rightOptionDeleteEnabled" // right Option acts as Forward Delete
     // Machine state, never exported: whether the keyboard mapping is in place,
     // so a launch after a crash can take it back out.
     static let superKeyMappingApplied = "superKeyMappingApplied"
@@ -774,6 +775,7 @@ enum Defaults {
         DefaultsKey.superKeyEnabled: false,
         DefaultsKey.superKeyModifiers: SuperKeySupport.defaultModifierStorageValue,
         DefaultsKey.superKeySoloAction: SuperKeySoloAction.none.rawValue,
+        DefaultsKey.rightOptionDeleteEnabled: false,
         DefaultsKey.smoothScrollExceptions: [String](),
         DefaultsKey.scrollInverterExceptions: [String](),
         DefaultsKey.mouseNavigationExceptions: [String](),
